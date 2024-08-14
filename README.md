@@ -1,0 +1,1 @@
+# -Solar-Powerd-Smart-Garbage-Bin
