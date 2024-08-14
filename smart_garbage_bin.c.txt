@@ -1,0 +1,70 @@
+//Smart Garbage Bin using GSM Modem
+#include <LiquidCrystal.h>
+#include <SoftwareSerial.h>
+
+// Pin configuration
+const int trigPin = 9;
+const int echoPin = 10;
+const int buzzerPin = 11;
+const int gsmTx = 2;
+const int gsmRx = 3;
+const int lcdRs = 7, lcdEn = 8, lcdD4 = 12, lcdD5 = 13, lcdD6 = 6, lcdD7 = 5;
+
+SoftwareSerial gsm(gsmTx, gsmRx);
+LiquidCrystal lcd(lcdRs, lcdEn, lcdD4, lcdD5, lcdD6, lcdD7);
+
+const int distanceThreshold = 10;  // Distance in cm for alert
+
+void setup() {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(buzzerPin, OUTPUT);
+  
+  gsm.begin(9600);
+  lcd.begin(16, 2);
+  
+  lcd.print("Smart Bin Ready");
+  delay(2000);
+  lcd.clear();
+}
+
+long getDistance() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  
+  long duration = pulseIn(echoPin, HIGH);
+  long distance = duration * 0.034 / 2;
+  return distance;
+}
+
+void sendSMS() {
+  gsm.print("AT+CMGF=1\r");
+  delay(100);
+  gsm.print("AT+CMGS=\"+1234567890\"\r");  // Replace with actual number
+  delay(100);
+  gsm.print("Garbage bin is full. Please empty it.\r");
+  delay(100);
+  gsm.write(26);
+  delay(1000);
+}
+
+void loop() {
+  long distance = getDistance();
+  
+  lcd.clear();
+  lcd.print("Distance: ");
+  lcd.print(distance);
+  lcd.print(" cm");
+  
+  if (distance < distanceThreshold) {
+    digitalWrite(buzzerPin, HIGH);
+    sendSMS();
+  } else {
+    digitalWrite(buzzerPin, LOW);
+  }
+  
+  delay(1000);
+}
